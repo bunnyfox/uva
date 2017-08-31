@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Python assignment 8
+
+@author: lizhuo
+@python version: 3.5
+Changelog: Initial verstion 2017-04-21
+"""
+"""
+The first part of this file is the optimized code, 
+but included the second and third optimized script below
+"""
+"""
+import sys
+import time
+import numpy as np
+
+
+
+a = 3.2
+
+time0=time.clock()
+print ('Value of system clock at start = %14.4f'%time0)
+
+argv=sys.argv
+if len(argv) < 3:
+    print ("Too few arguments")
+else:
+    try:
+      filename=argv[1]
+      print ("Coordinates will be read from file: %s"%filename)
+      cut=float(argv[2])
+    except(TypeError,ValueError):
+      print ("Input error")
+      
+# f.open actually works faster than np.loadtxt, so I didn't change this part
+fp=open(filename)
+natom=int(fp.readline().strip())
+     
+print ('Natom = %d'% natom)
+print ('  cut = %10.3e'% cut)
+
+# Step 3 - Set up the arrays to store the coordinate and charge data
+coord=[[0.0 for j in range(4)] for i in range(natom)]
+ 
+# Step 4 - read the coordinates and charges.
+count=0
+for line in fp:
+    linelist=[]
+    coord[count]=[]
+    linelist=list(map(float,line.strip().split()))
+    coord[count].extend(linelist[0:4])
+    count+=1
+coord=np.array(coord)
+time1=time.clock()
+print ('Value of system clock after coord read = %14.4f'%time1)
+
+count_cut=0
+total_e=0
+for i in range(0, natom):
+    coordi=coord[i][:-1]
+    qi=coord[i][-1]
+    coordj=coord[i+1:,:-1]-coordi
+    dist=np.sum(coordj**2, axis=1)**0.5
+    qj=np.delete(coord[i+1:,-1], np.where(dist>cut), axis=0)
+    dist=np.delete(dist, np.where(dist>cut), axis=0)
+    dist_inv=1./dist
+    count_cut+=len(dist)
+    current_e=np.exp(dist*qi)*np.exp(dist*qj)*dist_inv
+    total_e+=sum(current_e)-(1./a)*len(dist)
+
+time2=time.clock()
+
+print ('Value of system clock after coord read and E calc = %14.4f'%time2)
+
+# Step 6 - write out the results
+print ('                         Final Results') 
+print ('                         -------------')
+print ('                   Num Pairs = %14.4f ' %count_cut)
+print ('                     Total E = %14.4f' %total_e)
+print ('     Time to read coord file = %14.4f Seconds'% (time1-time0))
+print ('         Time to calculate E = %14.4f Seconds'% (time2-time1))
+print ('        Total Execution Time = %14.4f Seconds'% (time2-time0))
+
+
+"""
+
+#Second fastest appraoch, matrix combined with scipy.spatial.distance()
+
+import sys
+import time
+import numpy as np
+import scipy.spatial as spt
+import scipy
+a = 3.2
+
+time0=time.clock()
+print ('Value of system clock at start = %14.4f'%time0)
+
+
+argv=sys.argv
+if len(argv) < 3:
+    print ("Too few arguments")
+else:
+    try:
+      filename=argv[1]
+      print ("Coordinates will be read from file: %s"%filename)
+      cut=float(argv[2])
+    except(TypeError,ValueError):
+      print ("Input error")
+      
+fp=open(filename)
+natom=int(fp.readline().strip())
+
+print ('Natom = %d'% natom)
+print ('  cut = %10.3e'% cut)
+coord=[[0.0 for j in range(4)] for i in range(natom)]
+    
+count=0
+for line in fp:
+    linelist=[]
+    coord[count]=[]
+    linelist=list(map(float,line.strip().split()))
+    coord[count].extend(linelist[0:4])
+    count+=1
+coord=np.array(coord)    
+q=np.array(coord)[:,3]
+
+time1=time.clock()
+print ('Value of system clock after coord read = %14.4f'%time1)
+
+coord=coord[:,0:3]
+V = spt.distance.pdist(coord, 'euclidean')
+dis1=spt.distance.squareform(V)
+# compare with cut-off value
+dis1[dis1>cut]=0
+qi=dis1*q
+qj=(dis1.T * q).T
+current_e=scipy.exp(qi)*scipy.exp(qj)
+total_e=np.ones_like(dis1)*1.0/np.divide(dis1, current_e)
+iu1 = np.triu_indices(natom)
+total_e[iu1]=0
+total_e[total_e==np.inf]=0
+count_cut=np.count_nonzero(total_e)
+total_e=sum(sum(total_e))-(1./a)*count_cut
+time2=time.clock()
+print ('Value of system clock after coord read and E calc = %14.4f'%time2)
+
+print ('                         Final Results') 
+print ('                         -------------')
+print ('                   Num Pairs = %14.4f ' %count_cut)
+print ('                     Total E = %14.4f' %total_e)
+print ('         Time to calculate E = %14.4f Seconds'% (time2-time1))
+print ('        Total Execution Time = %14.4f Seconds'% (time2-time0))
+
+
+
+"""
+# Third
+import sys
+import time
+import numpy as np
+import scipy.spatial as spt
+import scipy
+a = 3.2
+
+time0=time.clock()
+print ('Value of system clock at start = %14.4f'%time0)
+
+
+argv=sys.argv
+if len(argv) < 3:
+    print ("Too few arguments")
+else:
+    try:
+      filename=argv[1]
+      print ("Coordinates will be read from file: %s"%filename)
+      cut=float(argv[2])
+    except(TypeError,ValueError):
+      print ("Input error")
+      
+fp=open(filename)
+natom=int(fp.readline().strip())
+
+print ('Natom = %d'% natom)
+print ('  cut = %10.3e'% cut)
+coord=[[0.0 for j in range(4)] for i in range(natom)]
+    
+count=0
+for line in fp:
+    linelist=[]
+    coord[count]=[]
+    linelist=list(map(float,line.strip().split()))
+    coord[count].extend(linelist[0:4])
+    count+=1
+coord=np.array(coord)    
+q=np.array(coord)[:,3]
+
+time1=time.clock()
+print ('Value of system clock after coord read = %14.4f'%time1)
+
+coord=coord[:,0:3]
+V = spt.distance.pdist(coord, 'euclidean')
+dis1=spt.distance.squareform(V)
+# compare with cut-off value
+iu1 = np.triu_indices(natom)
+dis1[iu1]=1 # set the upper diagonal to 1 (above cut-off level)
+ind_c=np.array(np.where(dis1<=cut)) #return the indices where value <=cut
+count_cut=ind_c.shape[1]
+time4=time.clock()
+print ('Value of system clock after extracting indices = %14.4f'%time4)
+current_e=[(math.exp(dis1[i,j]*(q[j]+q[i])))/dis1[i,j] for i, j in zip(ind_c[0], ind_c[1])]
+total_e=sum(current_e)-(1.0/a)*count_cut
+time2=time.clock()
+print ('Value of system clock after coord read and E calc = %14.4f'%time2)
+
+print ('                         Final Results') 
+print ('                         -------------')
+print ('                   Num Pairs = %14.4f ' %count_cut)
+print ('                     Total E = %14.4f' %total_e)
+print ('         Time to calculate E = %14.4f Seconds'% (time2-time1))
+print ('        Total Execution Time = %14.4f Seconds'% (time2-time0))
+
+"""
