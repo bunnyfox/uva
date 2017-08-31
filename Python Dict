@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Python assignment 7 main program
+
+@author: lizhuo
+@python version: 3.5
+Changelog: Initial verstion 2017-03-14
+"""
+
+
+""" Create two dictionaries """
+def create_data(filename):
+    Dict_actor={}
+    with open (filename, 'r') as input_file:
+        for line in input_file:
+            col_name=line.split(';')[0].strip()
+            col_value=line.split(';')[1]
+            col_value=col_value.strip('\n').split(',')
+            Dict_actor[col_name]=[x.lstrip().rstrip() for x in col_value]
+    return Dict_actor
+
+def trans_kv(Dict_actor):
+    Dict_film={}
+    for key in Dict_actor:
+        for value in Dict_actor[key]:
+            value.lstrip()
+            if value not in Dict_film:
+                Dict_film[value]=[key]
+            else: Dict_film[value].append(key)
+    return Dict_film
+
+    
+def find_actor(actor, Dict_actor, Dict_film):
+    out=[]
+    for value in Dict_actor[actor[0].strip()]:
+        if actor[1].strip() in Dict_film[value]:
+            out.append(value)
+    return out
+
+
+#Meg Ryan, Tom Hanks
+#Meg Ryan, Kevin Bacon
+def main():
+    Dict_actor=create_data('movies.txt')
+    Dict_film=trans_kv(Dict_actor)
+    out=find_actor(input("Please input the two actors name:").split(','), Dict_actor, Dict_film)
+    # input the two actors' name in the same line, comma seperated
+    if len(out)==0: print("\nThe two actors have not appear in a movie together.")
+    else:
+        print("\nThe two actors appeared in %s together." % ', '.join(out))
+
+if __name__=='__main__':
+    main()
+    
