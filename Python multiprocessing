@@ -1,0 +1,58 @@
+wi#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+
+HW9
+"""
+import numpy as np
+import multiprocessing
+import os
+import time
+mean1=np.sqrt(2)
+mean2=np.sqrt(np.pi)
+sd1=3.1
+sd2=1.4
+lower=-10*np.pi
+upper=10*np.pi
+iterate=64
+num_int=80000000
+
+def find_z(n):
+    len_chunk=num_int/iterate
+    x = np.random.uniform(lower, upper, len_chunk)
+    y = np.random.uniform(lower, upper, len_chunk)
+    z1=0.1*np.sin(x)*np.sin(x*y)
+    a=(x-mean1)**2/(2*sd1**2)
+    b=(y-mean2)**2/(2*sd2**2)
+    z2=np.exp(-(a+b))/(sd1*sd2*(np.sqrt(2*np.pi)))
+    z=z1+z2
+    xyz=np.vstack([x, y, z]).T
+    max_z=max(xyz, key=lambda x: x[2])
+    return max_z
+
+
+def find_max(chunk):
+    max_z=max(chunk, key=lambda x: x[2])
+    return max_z
+
+
+
+if __name__ =='__main__':
+    #ncpus=int(os.getenv("SLURM_CPUS_PER_TASK"))
+    # the max array length with 3 vars is 16,666,666
+    #pool=multiprocessing.Pool(processes=ncpus)
+    """
+    pool=multiprocessing.Pool(1)
+    tic=time.time()
+    #iterate=num_int/len_chunk
+    temp_max=pool.map(find_z, range(iterate))
+    result=find_max(temp_max)
+    toc=time.time()
+    """
+    tic2=time.time()
+    temp_max=map(find_z, range(iterate))
+    result=find_max(temp_max)
+    toc2=time.time()
+    #print toc-tic
+    print toc2-tic2
+    print result
